@@ -6,9 +6,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bootloader = "0.9.3"
 
 [profile.dev]
 panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personality 语言项
 
 [profile.release]
 panic = "abort" # 禁用 panic 时栈展开
+
+[package.metadata.bootimage]
+build-command = ["xbuild"] # 使用 xbuild 而不是默认的 build，bootimage 会使用
