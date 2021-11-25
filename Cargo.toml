@@ -6,7 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bootloader = "0.9.3" # 引导程序
+bootloader = "0.9.8" # 引导程序
 volatile = "0.2.6" # 可保证读写操作不被编译器优化掉
 spin = "0.5.2" # 自旋锁，不能使用标准库中 mutex
 
@@ -19,6 +19,3 @@ panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personalit
 
 [profile.release]
 panic = "abort" # 禁用 panic 时栈展开
-
-[package.metadata.bootimage]
-build-command = ["xbuild"] # 使用 xbuild 而不是默认的 build，bootimage 会使用

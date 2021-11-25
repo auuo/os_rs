@@ -1,0 +1,9 @@
+[build]
+target = "x86_64-os_rs.json"
+
+[target.'cfg(target_os = "none")'] # 筛选系统为 none 的所有编译目标
+runner = "bootimage runner" # cargo run 使用的命令，这个命令在成功编译后运行
+
+[unstable]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "compiler_builtins"] # 告诉 cargo 编译 core 和 compiler_builtins

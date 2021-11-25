@@ -1,5 +1,0 @@
-[build]
-target = "x86_64-os_rs.json"
-
-[target.'cfg(target_os = "none")'] # 筛选系统为 none 的所有编译目标
-runner = "bootimage runner" # cargo run 使用的命令，这个命令在成功编译后运行
