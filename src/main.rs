@@ -1,14 +1,14 @@
 #![no_std]
 #![no_main]
 
-use core::fmt::Write;
 use core::panic::PanicInfo;
 
 mod vga_buffer;
 
 /// panic 时会调用这个方法
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     // 要求返回 !
     loop {}
 }
@@ -16,9 +16,6 @@ fn panic(_info: &PanicInfo) -> ! {
 /// 程序入口点. no_mangle 避免 _start 函数名被重写
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    use core::fmt::Write;
-    vga_buffer::WRITER.lock().write_str("hello").unwrap();
-    write!(vga_buffer::WRITER.lock(), "hello {}", "hanmeimei").unwrap();
-
-    loop {}
+    println!("this is my printer");
+    panic!("i panic");
 }

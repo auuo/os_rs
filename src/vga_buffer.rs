@@ -1,9 +1,9 @@
-use volatile::Volatile;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use volatile::Volatile;
 
 lazy_static! {
-    // 使用 spin 自旋锁提供可变形
+    // 使用 spin 自旋锁提供安全的内部可变性
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Red, Color::White),
@@ -74,7 +74,7 @@ impl Writer {
         for b in s.bytes() {
             match b {
                 // 可打印的 ascii 字符
-                0x20...0x7e | b'\n' => self.write_byte(b),
+                0x20..=0x7e | b'\n' => self.write_byte(b),
                 // 不可打印的字符，显示一个方块的符号
                 _ => self.write_byte(0xfe),
             }
@@ -123,4 +123,21 @@ impl core::fmt::Write for Writer {
         self.write_string(s);
         Ok(())
     }
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*))); // 使用 _print 方法输出
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n")); // 无参数时打印换行
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*))); // 使用 print! 宏输出
+}
+
+#[doc(hidden)] // 需要 pub 但不需要生成文档
+pub fn _print(args: core::fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap(); // 不会 panic
 }
