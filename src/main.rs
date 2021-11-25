@@ -19,6 +19,7 @@ pub extern "C" fn _start() -> ! {
 
     for (i, &byte) in HELLO.iter().enumerate() {
         unsafe {
+            // 每个字符单元使用两个字节表示，第一个表示 ascii 码，第二个字节表示颜色
             *vga_buffer.offset(i as isize * 2) = byte;
             *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
         }
