@@ -1,4 +1,15 @@
 use volatile::Volatile;
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+lazy_static! {
+    // 使用 spin 自旋锁提供可变形
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
+        column_position: 0,
+        color_code: ColorCode::new(Color::Red, Color::White),
+        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+    });
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,14 +117,10 @@ impl Writer {
     }
 }
 
-pub fn print_something() {
-    let mut write = Writer {
-        column_position: 0,
-        color_code: ColorCode::new(Color::Red, Color::White),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
-
-    write.write_byte(b'H');
-    write.write_string("ello ");
-    write.write_string("wörld!\n")
+// 实现后可使用 write! 宏打印
+impl core::fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
 }
