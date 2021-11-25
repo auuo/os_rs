@@ -1,3 +1,5 @@
+use volatile::Volatile;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)] // 使用 u8 的格式存储
@@ -45,7 +47,8 @@ const BUFFER_WIDTH: usize = 80;
 /// vga 字符缓冲区数据结构，会将 vga 地址直接转到此结构
 #[repr(transparent)] // 要求和它唯一的变量内存布局相同
 struct Buffer {
-    chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    // 使用 Volatile 包装，保证 read 和 write 不被编译器优化掉。因为识别到只读或只写可能会被认为无效操作
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Writer {
@@ -76,10 +79,10 @@ impl Writer {
                 }
                 let row = BUFFER_HEIGHT - 1; // 永远写到屏幕最下一行
                 let col = self.column_position;
-                self.buffer.chars[row][col] = ScreenChar {
+                self.buffer.chars[row][col].write(ScreenChar {
                     ascii_char: byte,
                     color_code: self.color_code,
-                };
+                });
                 self.column_position += 1;
             }
         }
@@ -89,15 +92,15 @@ impl Writer {
         // 整体向上移动一行
         for i in 0..BUFFER_HEIGHT - 1 {
             for j in 0..BUFFER_WIDTH {
-                self.buffer.chars[i][j] = self.buffer.chars[i + 1][j]
+                self.buffer.chars[i][j].write(self.buffer.chars[i + 1][j].read())
             }
         }
         // 最后一行清空
         for i in 0..self.buffer.chars[BUFFER_HEIGHT - 1].len() {
-            self.buffer.chars[BUFFER_HEIGHT - 1][i] = ScreenChar {
+            self.buffer.chars[BUFFER_HEIGHT - 1][i].write(ScreenChar {
                 ascii_char: b' ',
                 color_code: self.color_code,
-            };
+            });
         }
         self.column_position = 0
     }
