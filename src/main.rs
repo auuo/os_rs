@@ -1,6 +1,10 @@
 #![no_std]
 #![no_main]
 
+#![feature(custom_test_frameworks)] // 使用自定义的测试框架
+#![test_runner(crate::test_runner)] // 指定运行测试的函数
+#![reexport_test_harness_main = "test_main"]
+
 use core::panic::PanicInfo;
 
 mod vga_buffer;
@@ -17,5 +21,15 @@ fn panic(info: &PanicInfo) -> ! {
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("this is my printer");
-    panic!("i panic");
+
+    #[cfg(test)]
+    test_main();
+
+    loop {}
+}
+
+/// rust 会收集测试调用这个函数
+#[cfg(test)]
+fn test_runner(tests: &[&dyn Fn()]) {
+    println!("Running {} tests", tests.len());
 }
