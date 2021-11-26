@@ -26,6 +26,8 @@ panic = "abort" # 禁用 panic 时栈展开
 # 只在 test 时生效
 test-args = [
     "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", # 退出设备，指定设备端口号和数据类型（0x04 = 4byte = u32）
-    "-serial", "stdio" # 串口配置，对接标准输出
+    "-serial", "stdio", # 串口配置，对接标准输出
+    "-display", "none" # 不显示 qemu 窗口
 ]
+test-timeout = 300 # 每个测试的超时时间（s）
 test-success-exit-code = 33 # (0x10 << 1) | 1
