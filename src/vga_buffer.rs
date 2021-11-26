@@ -52,7 +52,9 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
+/// vga 缓冲区的长度
 const BUFFER_HEIGHT: usize = 25;
+/// vga 缓冲区的宽度
 const BUFFER_WIDTH: usize = 80;
 
 /// vga 字符缓冲区数据结构，会将 vga 地址直接转到此结构
@@ -140,4 +142,29 @@ macro_rules! println {
 pub fn _print(args: core::fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap(); // 不会 panic
+}
+
+// 测试没有 panic
+#[test_case]
+fn test_println_simple() {
+    println!("test_println_simple output");
+}
+
+// 测试打印超过屏幕的行数
+#[test_case]
+fn test_println_many() {
+    for i in 0..200 {
+        println!("test_println_many output {}", i);
+    }
+}
+
+// 测试字符是否输出到缓冲区
+#[test_case]
+fn test_println_output() {
+    let s = "Some test string that fits on a single line";
+    println!("{}", s);
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_char), c);
+    }
 }
