@@ -9,6 +9,7 @@ edition = "2018"
 bootloader = "0.9.8" # 引导程序
 volatile = "0.2.6" # 可保证读写操作不被编译器优化掉
 spin = "0.5.2" # 自旋锁，不能使用标准库中 mutex
+x86_64 = "0.14.2" # 使用提供的 in out 等指令
 
 [dependencies.lazy_static]
 version = "1.4.0"
@@ -19,3 +20,8 @@ panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personalit
 
 [profile.release]
 panic = "abort" # 禁用 panic 时栈展开
+
+[package.metadata.bootimage]
+# 只在 test 时生效
+test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"] # 退出设备，指定设备端口号和数据类型（0x04 = 4byte = u32）
+test-success-exit-code = 33 # (0x10 << 1) | 1

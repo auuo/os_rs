@@ -28,6 +28,23 @@ pub extern "C" fn _start() -> ! {
     loop {}
 }
 
+/// qemu isa-debug-exit 设备退出码，退出码计算方式：(value << 1) | 1
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed = 0x11,
+}
+
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut port = Port::new(0xf4); // cargo.toml 中提供的 isa-debug-exit 设备端口号
+        port.write(exit_code as u32);
+    }
+}
+
 /// rust 会收集测试调用这个函数
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
@@ -35,6 +52,7 @@ fn test_runner(tests: &[&dyn Fn()]) {
     for test in tests {
         test();
     }
+    exit_qemu(QemuExitCode::Success);
 }
 
 #[test_case]
