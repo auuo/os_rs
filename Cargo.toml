@@ -31,3 +31,7 @@ test-args = [
 ]
 test-timeout = 300 # 每个测试的超时时间（s）
 test-success-exit-code = 33 # (0x10 << 1) | 1
+
+[[test]]
+name = "should_panic"
+harness = false # 不使用常规的 test 入口，直接使用 _start
