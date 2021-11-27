@@ -31,12 +31,11 @@ pub extern "C" fn _start() -> ! {
 
     os_rs::init();
 
-    // 触发 breakpoint 中断用于测试
-    x86_64::instructions::interrupts::int3();
-
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42; // 触发 page fault 异常
+    fn stack_overflow() {
+        stack_overflow(); // 递归入栈，直到指向 guard page
     }
+
+    stack_overflow();
 
     #[cfg(test)]
     test_main();
