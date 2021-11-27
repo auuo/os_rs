@@ -9,6 +9,7 @@ lazy_static! {
         // 使用 x86_64 crate 提供的数据结构
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        idt.double_fault.set_handler_fn(double_fault_handler);
         idt
     };
 }
@@ -20,6 +21,11 @@ pub fn init_idt() {
 /// debug 断点的中断处理
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
+
+// double fault 的 error_code 永远是 0
+extern "x86-interrupt" fn double_fault_handler(stack_frame: InterruptStackFrame, _error_code: u64) -> ! {
+    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
 
 // 测试断点异常处理，主动触发断点异常，并且正常返回
