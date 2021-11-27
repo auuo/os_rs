@@ -31,12 +31,6 @@ pub extern "C" fn _start() -> ! {
 
     os_rs::init();
 
-    fn stack_overflow() {
-        stack_overflow(); // 递归入栈，直到指向 guard page
-    }
-
-    stack_overflow();
-
     #[cfg(test)]
     test_main();
 
