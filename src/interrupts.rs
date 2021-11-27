@@ -21,3 +21,9 @@ pub fn init_idt() {
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
+
+// 测试断点异常处理，主动触发断点异常，并且正常返回
+#[test_case]
+fn test_breakpoint_exception() {
+    x86_64::instructions::interrupts::int3();
+}
