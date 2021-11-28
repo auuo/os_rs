@@ -24,6 +24,7 @@ pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8; // secondary 控制器的开始�
 #[repr(u8)]
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
+    KeyBoard,
 }
 
 impl InterruptIndex {
@@ -51,6 +52,7 @@ lazy_static! {
         }
         // 中断控制器使用下标的方式访问到 line
         idt[InterruptIndex::Timer.as_usize()].set_handler_fn(timer_interrupt_handler);
+        idt[InterruptIndex::KeyBoard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
         idt
     };
 }
@@ -75,6 +77,34 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
     // 需要明确的告诉 pic 该中断处理完了，这样 pic 才会触发下一个中断
     unsafe {
         PICS.lock().notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+    }
+}
+
+extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
+    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+    use x86_64::instructions::port::Port;
+
+    lazy_static! {
+        // 定义键盘
+        static ref KEYBOARD: spin::Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = spin::Mutex::new(Keyboard::new(layouts::Us104Key, ScancodeSet1, HandleControl::Ignore));
+    }
+
+    let mut keyboard = KEYBOARD.lock();
+    // ps/2 键盘的数据端口，按下和抬起都是不同的 code
+    let mut port = Port::new(0x60);
+
+    let scancode: u8 = unsafe { port.read() };
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                DecodedKey::Unicode(character) => print!("{}", character),
+                DecodedKey::RawKey(key) => print!("{:?}", key),
+            }
+        }
+    }
+
+    unsafe {
+        PICS.lock().notify_end_of_interrupt(InterruptIndex::KeyBoard.as_u8());
     }
 }
 
