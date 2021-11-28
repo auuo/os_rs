@@ -3,7 +3,7 @@
 #![feature(custom_test_frameworks)] // 使用自定义框架
 #![test_runner(test_runner)] // 收集可测试函数后会调用这个函数
 #![reexport_test_harness_main = "test_main"] // 将生成的测试入口函数名从 main 改为 test_main
-#![feature(abi_x86_interrupt)] // 设置中断向量表需要
+#![feature(abi_x86_interrupt)] // 设置中断向量表需要遵循 x86 的调用规范
 
 use core::panic::PanicInfo;
 
@@ -15,6 +15,8 @@ pub mod gdt;
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable(); // 开启中断
 }
 
 pub trait Testable {
