@@ -14,7 +14,7 @@ use os_rs::println;
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     // 要求返回 !
-    loop {}
+    os_rs::hlt_loop();
 }
 
 /// test 模式 panic 会调用这个方法
@@ -34,9 +34,5 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
-    loop {
-        os_rs::print!("-");
-    }
-
-    loop {}
+    os_rs::hlt_loop();
 }

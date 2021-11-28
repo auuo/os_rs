@@ -41,11 +41,12 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
+/// test 模式使用这个函数处理 panic，输出到串口
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 /// test 模式程序入口点. no_mangle 避免 _start 函数名被重写
@@ -54,7 +55,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 /// test 模式 panic 会调用这个方法
@@ -79,5 +80,12 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
     unsafe {
         let mut port = Port::new(0xf4); // cargo.toml 中提供的 isa-debug-exit 设备端口号
         port.write(exit_code as u32);
+    }
+}
+
+/// 死循环，使用 hlt 指令休眠
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt(); // hlt 指令休眠直到下一个中断到来
     }
 }
