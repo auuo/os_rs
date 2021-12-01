@@ -2,8 +2,9 @@ use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use x86_64::structures::idt::PageFaultErrorCode;
 
-use crate::gdt;
+use crate::{gdt, hlt_loop};
 use crate::print;
 use crate::println;
 
@@ -50,6 +51,7 @@ lazy_static! {
             idt.double_fault.set_handler_fn(double_fault_handler)
                 .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
+        idt.page_fault.set_handler_fn(page_fault_handler);
         // 中断控制器使用下标的方式访问到 line
         idt[InterruptIndex::Timer.as_usize()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::KeyBoard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
@@ -106,6 +108,17 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     unsafe {
         PICS.lock().notify_end_of_interrupt(InterruptIndex::KeyBoard.as_u8());
     }
+}
+
+extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, error_code: PageFaultErrorCode) {
+    // page fault 时 cpu 会将访问的虚拟地址放入 cr2 寄存器
+    use x86_64::registers::control::Cr2;
+
+    println!("EXCEPTION: PAGE FAULT");
+    println!("Accessed Address: {:?}", Cr2::read());
+    println!("Error Code: {:?}", error_code);
+    println!("{:#?}", stack_frame);
+    hlt_loop(); // page fault 不解决不能继续执行
 }
 
 // 测试断点异常处理，主动触发断点异常，并且正常返回
