@@ -5,6 +5,8 @@
 #![reexport_test_harness_main = "test_main"] // 将生成的测试入口函数名从 main 改为 test_main
 
 use core::panic::PanicInfo;
+use bootloader::BootInfo;
+use bootloader::entry_point;
 
 use os_rs::println;
 
@@ -24,9 +26,9 @@ fn panic(info: &PanicInfo) -> ! {
     os_rs::test_panic_handler(info)
 }
 
-/// 程序入口点. no_mangle 避免 _start 函数名被重写
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+
+fn kernel_main(_boot_info: &'static BootInfo) -> ! {
     println!("this is my printer");
 
     os_rs::init();

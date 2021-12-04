@@ -6,6 +6,8 @@
 #![feature(abi_x86_interrupt)] // 设置中断向量表需要遵循 x86 的调用规范
 
 use core::panic::PanicInfo;
+#[cfg(test)]
+use bootloader::{entry_point, BootInfo};
 
 pub mod serial;
 pub mod vga_buffer;
@@ -49,10 +51,12 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     hlt_loop();
 }
 
-/// test 模式程序入口点. no_mangle 避免 _start 函数名被重写
 #[cfg(test)]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+entry_point!(test_kernel_main);
+
+/// test 模式程序入口点.
+#[cfg(test)]
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
     init();
     test_main();
     hlt_loop();
