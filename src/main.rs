@@ -7,7 +7,6 @@
 use core::panic::PanicInfo;
 use bootloader::BootInfo;
 use bootloader::entry_point;
-use x86_64::structures::paging::PageTable;
 
 use os_rs::println;
 
@@ -31,33 +30,15 @@ fn panic(info: &PanicInfo) -> ! {
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use os_rs::memory::active_level_4_table;
     use x86_64::VirtAddr;
+    use x86_64::structures::paging::Translate;
 
     println!("this is my printer");
 
     os_rs::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    // let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
-    //
-    // for (i, entry) in l4_table.iter().enumerate() {
-    //     if !entry.is_unused() {
-    //         println!("L4 Entry {}: {:?}", i, entry);
-    //
-    //         // 页表项指向的物理地址，3 级页表
-    //         let phys = entry.frame().unwrap().start_address();
-    //         let virt = phys.as_u64() + boot_info.physical_memory_offset;
-    //         let ptr = VirtAddr::new(virt).as_ptr();
-    //         let l3_table: &PageTable = unsafe { &*ptr };
-    //
-    //         for (i, entry) in l3_table.iter().enumerate() {
-    //             if !entry.is_unused() {
-    //                 println!("L3 Entry {}: {:?}", i, entry);
-    //             }
-    //         }
-    //     }
-    // }
+    let mapper = unsafe { os_rs::memory::init(phys_mem_offset) };
 
     let addresses = [
         // the identity-mapped vga buffer page
@@ -72,7 +53,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     for &address in &addresses {
         let virt = VirtAddr::new(address);
-        let phys = unsafe { os_rs::memory::translate_addr(virt, phys_mem_offset) };
+        let phys = mapper.translate_addr(virt);
         println!("{:?} -> {:?}", virt, phys);
     }
 

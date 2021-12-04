@@ -1,8 +1,14 @@
 use x86_64::{PhysAddr, VirtAddr};
-use x86_64::structures::paging::PageTable;
+use x86_64::structures::paging::{OffsetPageTable, PageTable};
+
+// 使用 x86_64 crate 提供的页表抽象
+pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+    let level_4_table = active_level_4_table(physical_memory_offset);
+    OffsetPageTable::new(level_4_table, physical_memory_offset)
+}
 
 /// 返回 4 级页表
-pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut PageTable {
+unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut PageTable {
     use x86_64::registers::control::Cr3;
 
     // 读取 4 级页表物理地址
@@ -18,11 +24,14 @@ pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static
 /// 通过页表查找虚拟地址对应的物理地址
 /// 没有直接使用 virtAddr - physical_memory_offset 的原因是它只在虚拟地址是 complete-mapping 的一部分时才生效。
 /// 比如 vga 同时映射到 0xb8000 和 0xb8000 + physical_memory_offset。
-pub unsafe fn translate_addr(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
-    translate_addr_inner(addr, physical_memory_offset)
+/// 使用 OffsetPageTable 代替
+#[deprecated]
+unsafe fn _translate_addr(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
+    _translate_addr_inner(addr, physical_memory_offset)
 }
 
-fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
+#[deprecated]
+fn _translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr) -> Option<PhysAddr> {
     use x86_64::structures::paging::page_table::FrameError;
     use x86_64::registers::control::Cr3;
 
