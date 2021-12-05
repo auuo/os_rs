@@ -1,5 +1,5 @@
 use x86_64::{PhysAddr, VirtAddr};
-use x86_64::structures::paging::{OffsetPageTable, PageTable};
+use x86_64::structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PhysFrame, Size4KiB};
 
 // 使用 x86_64 crate 提供的页表抽象
 pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
@@ -19,6 +19,31 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
     let page_table_ptr: *mut PageTable = virt.as_mut_ptr();
 
     &mut *page_table_ptr
+}
+
+/// 创建一个虚拟内存到物理内存的映射
+/// frame_allocator 是用来如果需要新的 frame 存储页表时使用的
+pub fn create_example_mapping(page: Page,
+                              mapper: &mut OffsetPageTable,
+                              frame_allocator: &mut impl FrameAllocator<Size4KiB>) {
+    use x86_64::structures::paging::PageTableFlags as Flags;
+
+    let frame = PhysFrame::containing_address(PhysAddr::new(0xb8000));
+    let flags = Flags::PRESENT | Flags::WRITABLE;
+
+    let map_to_result = unsafe {
+        mapper.map_to(page, frame, flags, frame_allocator)
+    };
+    map_to_result.expect("map_to failed").flush(); // 刷新 tlb
+}
+
+/// 永远返回 None，测试使用
+pub struct EmptyFrameAllocator;
+
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
+        None
+    }
 }
 
 /// 通过页表查找虚拟地址对应的物理地址
