@@ -40,9 +40,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { os_rs::memory::init(phys_mem_offset) };
-    let mut frame_allocator = os_rs::memory::EmptyFrameAllocator;
+    let mut frame_allocator = unsafe { os_rs::memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    let page = Page::containing_address(VirtAddr::new(0));
+    let page = Page::containing_address(VirtAddr::new(0xbdeadbeaf));
     os_rs::memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
 
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();

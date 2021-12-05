@@ -1,3 +1,4 @@
+use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
 use x86_64::{PhysAddr, VirtAddr};
 use x86_64::structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PhysFrame, Size4KiB};
 
@@ -21,8 +22,46 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
     &mut *page_table_ptr
 }
 
+/// 使用 bootloader 传递的 memory map 查询可使用的内存 frame
+pub struct BootInfoFrameAllocator {
+    memory_map: &'static MemoryMap,
+    next: usize,
+}
+
+impl BootInfoFrameAllocator {
+    pub unsafe fn init(memory_map: &'static MemoryMap) -> Self {
+        BootInfoFrameAllocator {
+            memory_map,
+            next: 0,
+        }
+    }
+
+    // 获取所有可用的 frame
+    pub fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
+        // 从 bootInfo memory map 里获取所有区域
+        let regions = self.memory_map.iter();
+        let usable_regions = regions.filter(|r| r.region_type == MemoryRegionType::Usable);
+        // 获取每一块的地址范围
+        let addr_ranges = usable_regions.map(|r| r.range.start_addr()..r.range.end_addr());
+        // 将每一块区域划分为 4096 的大小
+        let frame_addresses = addr_ranges.flat_map(|r| r.step_by(4096));
+        // 转换为 PhysFrame 类型
+        frame_addresses.map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))
+    }
+}
+
+unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
+        // 获取可用的 frame，每次申请使用 next 位置的 frame
+        let frame = self.usable_frames().nth(self.next);
+        self.next += 1;
+        frame
+    }
+}
+
 /// 创建一个虚拟内存到物理内存的映射
 /// frame_allocator 是用来如果需要新的 frame 存储页表时使用的
+#[deprecated]
 pub fn create_example_mapping(page: Page,
                               mapper: &mut OffsetPageTable,
                               frame_allocator: &mut impl FrameAllocator<Size4KiB>) {
@@ -38,6 +77,7 @@ pub fn create_example_mapping(page: Page,
 }
 
 /// 永远返回 None，测试使用
+#[deprecated]
 pub struct EmptyFrameAllocator;
 
 unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
