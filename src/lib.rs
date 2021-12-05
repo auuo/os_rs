@@ -4,6 +4,9 @@
 #![test_runner(test_runner)] // 收集可测试函数后会调用这个函数
 #![reexport_test_harness_main = "test_main"] // 将生成的测试入口函数名从 main 改为 test_main
 #![feature(abi_x86_interrupt)] // 设置中断向量表需要遵循 x86 的调用规范
+#![feature(alloc_error_handler)] // 堆申请失败时的处理器注解
+
+extern crate alloc; // 对内置 crate 依赖
 
 use core::panic::PanicInfo;
 #[cfg(test)]
@@ -14,6 +17,7 @@ pub mod vga_buffer;
 pub mod interrupts;
 pub mod gdt;
 pub mod memory;
+pub mod allocator;
 
 pub fn init() {
     gdt::init();

@@ -4,6 +4,9 @@
 #![test_runner(os_rs::test_runner)] // 指定运行测试的函数
 #![reexport_test_harness_main = "test_main"] // 将生成的测试入口函数名从 main 改为 test_main
 
+extern crate alloc; // 对内置 crate 依赖
+
+use alloc::boxed::Box;
 use core::panic::PanicInfo;
 use bootloader::BootInfo;
 use bootloader::entry_point;
@@ -33,6 +36,7 @@ entry_point!(kernel_main);
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::VirtAddr;
     use x86_64::structures::paging::Translate;
+    use os_rs::allocator;
 
     println!("this is my printer");
 
@@ -42,11 +46,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { os_rs::memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { os_rs::memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    let page = Page::containing_address(VirtAddr::new(0xbdeadbeaf));
-    os_rs::memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};
+    let x = Box::new(123);
 
     #[cfg(test)]
     test_main();
