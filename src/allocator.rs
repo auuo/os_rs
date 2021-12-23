@@ -4,13 +4,17 @@ use linked_list_allocator::LockedHeap;
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
 use x86_64::structures::paging::mapper::MapToError;
 use x86_64::VirtAddr;
+use crate::allocator::bump::BumpAllocator;
+
+pub mod bump;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 // 定义堆内存开始的虚拟内存
 pub const HEAP_SIZE: usize = 100 * 1024; // 堆大小 100k
 
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
+// static ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 /// 初始化堆内存，将堆内存部分映射到页表
 pub fn init_heap(mapper: &mut impl Mapper<Size4KiB>,
@@ -58,4 +62,31 @@ unsafe impl GlobalAlloc for Dummy {
 #[alloc_error_handler]
 fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
     panic!("allocation error: {:?}", layout)
+}
+
+/// 使用 spin::Mutex 包装
+pub struct Locked<A> {
+    inner: spin::Mutex<A>
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
+
+/// 对齐内存
+fn align_up(addr: usize, align: usize) -> usize {
+    let remainder = addr % align;
+    if remainder == 0 {
+        addr
+    } else {
+        addr - remainder + align // 向后补，不能向前，否则会覆盖已使用的内存
+    }
 }
