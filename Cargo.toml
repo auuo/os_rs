@@ -20,10 +20,10 @@ version = "1.4.0"
 features = ["spin_no_std"] # 不连接标准库
 
 [profile.dev]
-panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personality 语言项
+#panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personality 语言项
 
 [profile.release]
-panic = "abort" # 禁用 panic 时栈展开
+#panic = "abort" # 禁用 panic 时栈展开
 
 [package.metadata.bootimage]
 # 只在 test 时生效
