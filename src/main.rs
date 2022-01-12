@@ -13,6 +13,9 @@ use bootloader::entry_point;
 use x86_64::structures::paging::Page;
 
 use os_rs::println;
+use os_rs::task::simple_executor::SimpleExecutor;
+use os_rs::task::Task;
+use os_rs::task::keyboard;
 
 /// panic 时会调用这个方法
 #[cfg(not(test))]
@@ -50,8 +53,22 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let x = Box::new(123);
 
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
+
     #[cfg(test)]
     test_main();
 
     os_rs::hlt_loop();
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }

@@ -19,6 +19,20 @@ linked_list_allocator = "0.9.0" # 堆分配器
 version = "1.4.0"
 features = ["spin_no_std"] # 不连接标准库
 
+[dependencies.crossbeam-queue] # 提供队列功能，避免原生 VecDeque 在中断中出现死锁和扩容问题
+version = "0.2.1"
+default-features = false
+features = ["alloc"]
+
+[dependencies.conquer-once] # onceCell
+version = "0.2.0"
+default-features = false
+
+[dependencies.futures-util] # Stream, AtomicWaker
+version = "0.3.4"
+default-features = false
+features = ["alloc"]
+
 [profile.dev]
 #panic = "abort" # 禁用 panic 时栈展开, 这样就不用提供 en_personality 语言项
 
