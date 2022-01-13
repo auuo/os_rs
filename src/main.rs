@@ -13,6 +13,7 @@ use bootloader::entry_point;
 use x86_64::structures::paging::Page;
 
 use os_rs::println;
+use os_rs::task::executor::Executor;
 use os_rs::task::simple_executor::SimpleExecutor;
 use os_rs::task::Task;
 use os_rs::task::keyboard;
@@ -53,7 +54,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let x = Box::new(123);
 
-    let mut executor = SimpleExecutor::new();
+    let mut executor = Executor::new();
     executor.spawn(Task::new(example_task()));
     executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();
